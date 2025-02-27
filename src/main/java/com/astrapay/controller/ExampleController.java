@@ -1,23 +1,20 @@
 package com.astrapay.controller;
 
 import com.astrapay.dto.ExampleDto;
-import com.astrapay.exception.ExampleException;
 import com.astrapay.service.ExampleService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
 
 @RestController
+@RequestMapping("/api/examples")
 @Api(value = "ExampleController")
-@Slf4j
 public class ExampleController {
     private final ExampleService exampleService;
 
@@ -26,25 +23,36 @@ public class ExampleController {
         this.exampleService = exampleService;
     }
 
-    @GetMapping("/hello")
-    @ApiOperation(value = "Say Hello")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(code = 200, message = "OK", response = ExampleDto.class)
-            }
-    )
-    public ResponseEntity<String> sayHello(@RequestParam String name, @RequestParam String description) {
-        log.info("Incoming hello Request from " + name);
-
-        try {
-            ExampleDto exampleDto = new ExampleDto();
-            exampleDto.setName(name);
-            exampleDto.setDescription(description);
-
-            return ResponseEntity.ok(exampleService.sayHello(exampleDto));
-        } catch (ExampleException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    @PostMapping
+    @ApiOperation(value = "Create a new example")
+    public ResponseEntity<ExampleDto> create(@Valid @RequestBody ExampleDto exampleDto) {
+        return new ResponseEntity<>(exampleService.create(exampleDto), HttpStatus.CREATED);
     }
 
+    @GetMapping("/{name}")
+    @ApiOperation(value = "Get example by name")
+    public ResponseEntity<ExampleDto> getByName(@PathVariable String name) {
+        ExampleDto example = exampleService.getByName(name);
+        return example != null ? ResponseEntity.ok(example) : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping
+    @ApiOperation(value = "Get all examples")
+    public ResponseEntity<List<ExampleDto>> getAll() {
+        return ResponseEntity.ok(exampleService.getAll());
+    }
+
+    @PutMapping("/{name}")
+    @ApiOperation(value = "Update example by name")
+    public ResponseEntity<ExampleDto> update(@PathVariable String name, @Valid @RequestBody ExampleDto exampleDto) {
+        ExampleDto updated = exampleService.update(name, exampleDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{name}")
+    @ApiOperation(value = "Delete example by name")
+    public ResponseEntity<Void> delete(@PathVariable String name) {
+        exampleService.delete(name);
+        return ResponseEntity.ok().build();
+    }
 }
